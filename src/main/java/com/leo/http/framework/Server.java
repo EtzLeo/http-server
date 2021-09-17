@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 
 @Log
 public class Server {
+  private ServerSocket serverSocket;
   private static final byte[] CRLF = new byte[]{'\r', '\n'};
   private static final byte[] CRLFCRLF = new byte[]{'\r', '\n', '\r', '\n'};
   private final static int headersLimit = 4096;
@@ -139,16 +140,13 @@ public class Server {
     try (
         final var serverSocket = new ServerSocket(port)
     ) {
+      this.serverSocket = serverSocket;
       log.log(Level.INFO, "server started at port: " + serverSocket.getLocalPort());
-      service.submit(() -> {
-        while (!stop) {
-          try ( final Socket socket = serverSocket.accept()){
-            service.submit(() -> handle(socket));
-          } catch (IOException e) {
-            throw new ServerException(e);
-          }
-        }
-      });
+
+      while (!stop) {
+        final var socket = serverSocket.accept();
+        service.submit(() -> handle(socket));
+      }
     }
     catch (IOException e) {
       throw new ServerException(e);
@@ -158,6 +156,13 @@ public class Server {
   public void stop() {
     this.stop = true;
     service.shutdownNow();
+    try {
+      this.serverSocket.close();
+    }
+    catch (IOException e) {
+      throw new ServerException(e);
+    }
+    log.log(Level.INFO, "server stopped");
   }
 
   public void handle(final Socket socket) {
