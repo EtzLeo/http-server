@@ -234,9 +234,9 @@ public class Server {
         in.skipNBytes(headersEndIndex);
         final var body = in.readNBytes(contentLength);
 
-        final var contentType = headers.getOrDefault("Content-Type", "application/x-www-form-urlencoded");
+        final var contentType = headers.get("Content-Type");
         final Map<String, List<String>> form = new HashMap<>();
-        if (contentType.equalsIgnoreCase("application/x-www-form-urlencoded")) {
+        if ("application/x-www-form-urlencoded".equalsIgnoreCase(contentType)) {
           String[] bodyParts = new String(body, StandardCharsets.UTF_8).split("&");
           if (bodyParts.length > 1) {
             parse(form, bodyParts);
